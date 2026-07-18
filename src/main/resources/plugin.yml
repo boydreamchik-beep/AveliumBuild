@@ -8,55 +8,46 @@ description: WorldEdit для сервера Avelium с русскими под�
 commands:
   /wand:
     description: Получить топор выделения
-    aliases: [wand]
   /pos1:
     description: Установить точку 1
-    aliases: [pos1, p1]
   /pos2:
     description: Установить точку 2
-    aliases: [pos2, p2]
   /set:
     description: Заполнить регион блоком
-    aliases: [set]
+    usage: //set <блок>
   /replace:
     description: Заменить блоки
-    aliases: [replace, rep]
+    usage: //replace <старый> <новый>
   /walls:
     description: Построить стены
-    aliases: [walls]
+    usage: //walls <блок>
   /outline:
     description: Построить полную рамку
-    aliases: [outline]
+    usage: //outline <блок>
   /sphere:
     description: Построить сферу
-    aliases: [sphere]
+    usage: //sphere <блок> <радиус>
   /cyl:
     description: Построить цилиндр
-    aliases: [cyl, cylinder]
+    usage: //cyl <блок> <радиус> <высота>
   /pyramid:
     description: Построить пирамиду
-    aliases: [pyramid, pyr]
+    usage: //pyramid <блок> <размер>
   /copy:
     description: Скопировать регион
-    aliases: [copy]
   /paste:
     description: Вставить регион
-    aliases: [paste]
   /undo:
     description: Отменить действие
-    aliases: [undo]
   /redo:
     description: Вернуть отменённое
-    aliases: [redo]
   /count:
     description: Посчитать блоки
-    aliases: [count]
+    usage: //count <блок>
   /size:
     description: Размер выделения
-    aliases: [size]
-  /help:
+  /avhelp:
     description: Помощь по командам
-    aliases: [avhelp]
 
 permissions:
   aveliumbuild.use:
