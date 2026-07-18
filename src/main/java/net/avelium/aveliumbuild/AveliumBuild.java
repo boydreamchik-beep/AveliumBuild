@@ -29,12 +29,21 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
         registerRussianBlocks();
         getServer().getPluginManager().registerEvents(this, this);
-        String[] cmds = {"wand","pos1","pos2","set","replace","walls","outline","sphere","cyl","pyramid","copy","paste","undo","redo","count","size","help"};
+
+        String[] cmds = {
+            "/wand", "/pos1", "/pos2", "/set", "/replace", "/walls",
+            "/outline", "/sphere", "/cyl", "/pyramid", "/copy", "/paste",
+            "/undo", "/redo", "/count", "/size", "/avhelp"
+        };
         for (String c : cmds) {
-            if (getCommand(c) != null) getCommand(c).setTabCompleter(this);
+            if (getCommand(c) != null) {
+                getCommand(c).setTabCompleter(this);
+            }
         }
+
         getLogger().info("AveliumBuild запущен! Русских блоков: " + ruBlocks.size());
     }
 
@@ -76,10 +85,16 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
 
         if (e.getAction() == Action.LEFT_CLICK_BLOCK) {
             pos1.put(p.getUniqueId(), loc);
-            p.sendMessage(msg("pos1-set", "x", String.valueOf(loc.getBlockX()), "y", String.valueOf(loc.getBlockY()), "z", String.valueOf(loc.getBlockZ())));
+            p.sendMessage(msg("pos1-set",
+                "x", String.valueOf(loc.getBlockX()),
+                "y", String.valueOf(loc.getBlockY()),
+                "z", String.valueOf(loc.getBlockZ())));
         } else if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
             pos2.put(p.getUniqueId(), loc);
-            p.sendMessage(msg("pos2-set", "x", String.valueOf(loc.getBlockX()), "y", String.valueOf(loc.getBlockY()), "z", String.valueOf(loc.getBlockZ())));
+            p.sendMessage(msg("pos2-set",
+                "x", String.valueOf(loc.getBlockX()),
+                "y", String.valueOf(loc.getBlockY()),
+                "z", String.valueOf(loc.getBlockZ())));
         }
     }
 
@@ -87,20 +102,37 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if (!(sender instanceof Player p)) { sender.sendMessage("Только для игроков!"); return true; }
-        if (!hasAccess(p)) { p.sendMessage(msg("no-permission")); return true; }
+        if (!(sender instanceof Player p)) {
+            sender.sendMessage("Только для игроков!");
+            return true;
+        }
+        if (!hasAccess(p)) {
+            p.sendMessage(msg("no-permission"));
+            return true;
+        }
 
-        switch (cmd.getName().toLowerCase()) {
-            case "wand" -> { p.getInventory().addItem(new ItemStack(Material.WOODEN_AXE)); p.sendMessage(msg("wand-given")); }
+        String name = cmd.getName().toLowerCase().replace("/", "");
+
+        switch (name) {
+            case "wand" -> {
+                p.getInventory().addItem(new ItemStack(Material.WOODEN_AXE));
+                p.sendMessage(msg("wand-given"));
+            }
             case "pos1" -> {
                 Location l = p.getLocation();
                 pos1.put(p.getUniqueId(), l);
-                p.sendMessage(msg("pos1-set", "x", String.valueOf(l.getBlockX()), "y", String.valueOf(l.getBlockY()), "z", String.valueOf(l.getBlockZ())));
+                p.sendMessage(msg("pos1-set",
+                    "x", String.valueOf(l.getBlockX()),
+                    "y", String.valueOf(l.getBlockY()),
+                    "z", String.valueOf(l.getBlockZ())));
             }
             case "pos2" -> {
                 Location l = p.getLocation();
                 pos2.put(p.getUniqueId(), l);
-                p.sendMessage(msg("pos2-set", "x", String.valueOf(l.getBlockX()), "y", String.valueOf(l.getBlockY()), "z", String.valueOf(l.getBlockZ())));
+                p.sendMessage(msg("pos2-set",
+                    "x", String.valueOf(l.getBlockX()),
+                    "y", String.valueOf(l.getBlockY()),
+                    "z", String.valueOf(l.getBlockZ())));
             }
             case "set" -> cmdSet(p, args);
             case "replace" -> cmdReplace(p, args);
@@ -115,7 +147,7 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
             case "redo" -> cmdRedo(p);
             case "count" -> cmdCount(p, args);
             case "size" -> cmdSize(p);
-            case "help" -> sendHelp(p);
+            case "avhelp" -> sendHelp(p);
         }
         return true;
     }
@@ -130,40 +162,65 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
 
     // ============ SET ============
     private void cmdSet(Player p, String[] args) {
-        if (args.length < 1) { p.sendMessage(msg("usage", "usage", "//set <блок>")); return; }
+        if (args.length < 1) {
+            p.sendMessage(msg("usage", "usage", "//set <блок>"));
+            return;
+        }
         if (!checkRegion(p)) return;
         Material mat = parseBlock(args[0]);
-        if (mat == null) { p.sendMessage(msg("unknown-block", "block", args[0])); return; }
-
-        Location l1 = pos1.get(p.getUniqueId()), l2 = pos2.get(p.getUniqueId());
+        if (mat == null) {
+            p.sendMessage(msg("unknown-block", "block", args[0]));
+            return;
+        }
+        Location l1 = pos1.get(p.getUniqueId());
+        Location l2 = pos2.get(p.getUniqueId());
         List<Location> locs = getCuboidLocations(l1, l2);
         performOperation(p, locs, loc -> mat);
     }
 
     // ============ REPLACE ============
     private void cmdReplace(Player p, String[] args) {
-        if (args.length < 2) { p.sendMessage(msg("usage", "usage", "//replace <старый> <новый>")); return; }
+        if (args.length < 2) {
+            p.sendMessage(msg("usage", "usage", "//replace <старый> <новый>"));
+            return;
+        }
         if (!checkRegion(p)) return;
-        Material from = parseBlock(args[0]), to = parseBlock(args[1]);
-        if (from == null) { p.sendMessage(msg("unknown-block", "block", args[0])); return; }
-        if (to == null) { p.sendMessage(msg("unknown-block", "block", args[1])); return; }
-
-        Location l1 = pos1.get(p.getUniqueId()), l2 = pos2.get(p.getUniqueId());
+        Material from = parseBlock(args[0]);
+        Material to = parseBlock(args[1]);
+        if (from == null) {
+            p.sendMessage(msg("unknown-block", "block", args[0]));
+            return;
+        }
+        if (to == null) {
+            p.sendMessage(msg("unknown-block", "block", args[1]));
+            return;
+        }
+        Location l1 = pos1.get(p.getUniqueId());
+        Location l2 = pos2.get(p.getUniqueId());
         List<Location> locs = getCuboidLocations(l1, l2);
         performOperationFiltered(p, locs, loc -> loc.getBlock().getType() == from, loc -> to);
     }
 
     // ============ WALLS ============
     private void cmdWalls(Player p, String[] args) {
-        if (args.length < 1) { p.sendMessage(msg("usage", "usage", "//walls <блок>")); return; }
+        if (args.length < 1) {
+            p.sendMessage(msg("usage", "usage", "//walls <блок>"));
+            return;
+        }
         if (!checkRegion(p)) return;
         Material mat = parseBlock(args[0]);
-        if (mat == null) { p.sendMessage(msg("unknown-block", "block", args[0])); return; }
-
-        Location l1 = pos1.get(p.getUniqueId()), l2 = pos2.get(p.getUniqueId());
-        int minX = Math.min(l1.getBlockX(), l2.getBlockX()), maxX = Math.max(l1.getBlockX(), l2.getBlockX());
-        int minY = Math.min(l1.getBlockY(), l2.getBlockY()), maxY = Math.max(l1.getBlockY(), l2.getBlockY());
-        int minZ = Math.min(l1.getBlockZ(), l2.getBlockZ()), maxZ = Math.max(l1.getBlockZ(), l2.getBlockZ());
+        if (mat == null) {
+            p.sendMessage(msg("unknown-block", "block", args[0]));
+            return;
+        }
+        Location l1 = pos1.get(p.getUniqueId());
+        Location l2 = pos2.get(p.getUniqueId());
+        int minX = Math.min(l1.getBlockX(), l2.getBlockX());
+        int maxX = Math.max(l1.getBlockX(), l2.getBlockX());
+        int minY = Math.min(l1.getBlockY(), l2.getBlockY());
+        int maxY = Math.max(l1.getBlockY(), l2.getBlockY());
+        int minZ = Math.min(l1.getBlockZ(), l2.getBlockZ());
+        int maxZ = Math.max(l1.getBlockZ(), l2.getBlockZ());
         List<Location> locs = new ArrayList<>();
         for (int x = minX; x <= maxX; x++)
             for (int y = minY; y <= maxY; y++)
@@ -175,15 +232,24 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
 
     // ============ OUTLINE ============
     private void cmdOutline(Player p, String[] args) {
-        if (args.length < 1) { p.sendMessage(msg("usage", "usage", "//outline <блок>")); return; }
+        if (args.length < 1) {
+            p.sendMessage(msg("usage", "usage", "//outline <блок>"));
+            return;
+        }
         if (!checkRegion(p)) return;
         Material mat = parseBlock(args[0]);
-        if (mat == null) { p.sendMessage(msg("unknown-block", "block", args[0])); return; }
-
-        Location l1 = pos1.get(p.getUniqueId()), l2 = pos2.get(p.getUniqueId());
-        int minX = Math.min(l1.getBlockX(), l2.getBlockX()), maxX = Math.max(l1.getBlockX(), l2.getBlockX());
-        int minY = Math.min(l1.getBlockY(), l2.getBlockY()), maxY = Math.max(l1.getBlockY(), l2.getBlockY());
-        int minZ = Math.min(l1.getBlockZ(), l2.getBlockZ()), maxZ = Math.max(l1.getBlockZ(), l2.getBlockZ());
+        if (mat == null) {
+            p.sendMessage(msg("unknown-block", "block", args[0]));
+            return;
+        }
+        Location l1 = pos1.get(p.getUniqueId());
+        Location l2 = pos2.get(p.getUniqueId());
+        int minX = Math.min(l1.getBlockX(), l2.getBlockX());
+        int maxX = Math.max(l1.getBlockX(), l2.getBlockX());
+        int minY = Math.min(l1.getBlockY(), l2.getBlockY());
+        int maxY = Math.max(l1.getBlockY(), l2.getBlockY());
+        int minZ = Math.min(l1.getBlockZ(), l2.getBlockZ());
+        int maxZ = Math.max(l1.getBlockZ(), l2.getBlockZ());
         List<Location> locs = new ArrayList<>();
         for (int x = minX; x <= maxX; x++)
             for (int y = minY; y <= maxY; y++)
@@ -199,48 +265,79 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
 
     // ============ SPHERE ============
     private void cmdSphere(Player p, String[] args) {
-        if (args.length < 2) { p.sendMessage(msg("usage", "usage", "//sphere <блок> <радиус>")); return; }
+        if (args.length < 2) {
+            p.sendMessage(msg("usage", "usage", "//sphere <блок> <радиус>"));
+            return;
+        }
         Material mat = parseBlock(args[0]);
-        if (mat == null) { p.sendMessage(msg("unknown-block", "block", args[0])); return; }
+        if (mat == null) {
+            p.sendMessage(msg("unknown-block", "block", args[0]));
+            return;
+        }
         int r;
-        try { r = Integer.parseInt(args[1]); } catch (NumberFormatException e) { p.sendMessage(msg("usage", "usage", "//sphere <блок> <радиус>")); return; }
-
+        try {
+            r = Integer.parseInt(args[1]);
+        } catch (NumberFormatException e) {
+            p.sendMessage(msg("usage", "usage", "//sphere <блок> <радиус>"));
+            return;
+        }
         Location c = p.getLocation();
         List<Location> locs = new ArrayList<>();
         for (int x = -r; x <= r; x++)
             for (int y = -r; y <= r; y++)
                 for (int z = -r; z <= r; z++)
-                    if (x*x + y*y + z*z <= r*r)
+                    if (x * x + y * y + z * z <= r * r)
                         locs.add(c.clone().add(x, y, z));
         performOperation(p, locs, loc -> mat);
     }
 
     // ============ CYL ============
     private void cmdCyl(Player p, String[] args) {
-        if (args.length < 3) { p.sendMessage(msg("usage", "usage", "//cyl <блок> <радиус> <высота>")); return; }
+        if (args.length < 3) {
+            p.sendMessage(msg("usage", "usage", "//cyl <блок> <радиус> <высота>"));
+            return;
+        }
         Material mat = parseBlock(args[0]);
-        if (mat == null) { p.sendMessage(msg("unknown-block", "block", args[0])); return; }
+        if (mat == null) {
+            p.sendMessage(msg("unknown-block", "block", args[0]));
+            return;
+        }
         int r, h;
-        try { r = Integer.parseInt(args[1]); h = Integer.parseInt(args[2]); } catch (NumberFormatException e) { p.sendMessage(msg("usage", "usage", "//cyl <блок> <радиус> <высота>")); return; }
-
+        try {
+            r = Integer.parseInt(args[1]);
+            h = Integer.parseInt(args[2]);
+        } catch (NumberFormatException e) {
+            p.sendMessage(msg("usage", "usage", "//cyl <блок> <радиус> <высота>"));
+            return;
+        }
         Location c = p.getLocation();
         List<Location> locs = new ArrayList<>();
         for (int x = -r; x <= r; x++)
             for (int y = 0; y < h; y++)
                 for (int z = -r; z <= r; z++)
-                    if (x*x + z*z <= r*r)
+                    if (x * x + z * z <= r * r)
                         locs.add(c.clone().add(x, y, z));
         performOperation(p, locs, loc -> mat);
     }
 
     // ============ PYRAMID ============
     private void cmdPyramid(Player p, String[] args) {
-        if (args.length < 2) { p.sendMessage(msg("usage", "usage", "//pyramid <блок> <размер>")); return; }
+        if (args.length < 2) {
+            p.sendMessage(msg("usage", "usage", "//pyramid <блок> <размер>"));
+            return;
+        }
         Material mat = parseBlock(args[0]);
-        if (mat == null) { p.sendMessage(msg("unknown-block", "block", args[0])); return; }
+        if (mat == null) {
+            p.sendMessage(msg("unknown-block", "block", args[0]));
+            return;
+        }
         int size;
-        try { size = Integer.parseInt(args[1]); } catch (NumberFormatException e) { p.sendMessage(msg("usage", "usage", "//pyramid <блок> <размер>")); return; }
-
+        try {
+            size = Integer.parseInt(args[1]);
+        } catch (NumberFormatException e) {
+            p.sendMessage(msg("usage", "usage", "//pyramid <блок> <размер>"));
+            return;
+        }
         Location c = p.getLocation();
         List<Location> locs = new ArrayList<>();
         for (int y = 0; y < size; y++) {
@@ -255,10 +352,14 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
     // ============ COPY / PASTE ============
     private void cmdCopy(Player p) {
         if (!checkRegion(p)) return;
-        Location l1 = pos1.get(p.getUniqueId()), l2 = pos2.get(p.getUniqueId());
-        int minX = Math.min(l1.getBlockX(), l2.getBlockX()), maxX = Math.max(l1.getBlockX(), l2.getBlockX());
-        int minY = Math.min(l1.getBlockY(), l2.getBlockY()), maxY = Math.max(l1.getBlockY(), l2.getBlockY());
-        int minZ = Math.min(l1.getBlockZ(), l2.getBlockZ()), maxZ = Math.max(l1.getBlockZ(), l2.getBlockZ());
+        Location l1 = pos1.get(p.getUniqueId());
+        Location l2 = pos2.get(p.getUniqueId());
+        int minX = Math.min(l1.getBlockX(), l2.getBlockX());
+        int maxX = Math.max(l1.getBlockX(), l2.getBlockX());
+        int minY = Math.min(l1.getBlockY(), l2.getBlockY());
+        int maxY = Math.max(l1.getBlockY(), l2.getBlockY());
+        int minZ = Math.min(l1.getBlockZ(), l2.getBlockZ());
+        int maxZ = Math.max(l1.getBlockZ(), l2.getBlockZ());
 
         ClipboardData cd = new ClipboardData();
         cd.origin = p.getLocation().clone();
@@ -266,7 +367,11 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
             for (int y = minY; y <= maxY; y++)
                 for (int z = minZ; z <= maxZ; z++) {
                     Block b = p.getWorld().getBlockAt(x, y, z);
-                    cd.blocks.add(new ClipboardBlock(x - cd.origin.getBlockX(), y - cd.origin.getBlockY(), z - cd.origin.getBlockZ(), b.getBlockData().clone()));
+                    cd.blocks.add(new ClipboardBlock(
+                        x - cd.origin.getBlockX(),
+                        y - cd.origin.getBlockY(),
+                        z - cd.origin.getBlockZ(),
+                        b.getBlockData().clone()));
                 }
         clipboards.put(p.getUniqueId(), cd);
         p.sendMessage(msg("copy-done", "count", String.valueOf(cd.blocks.size())));
@@ -274,8 +379,10 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
 
     private void cmdPaste(Player p) {
         ClipboardData cd = clipboards.get(p.getUniqueId());
-        if (cd == null) { p.sendMessage(ChatColor.RED + "Буфер обмена пуст! Используйте //copy"); return; }
-
+        if (cd == null) {
+            p.sendMessage(ChatColor.RED + "Буфер обмена пуст! Используйте //copy");
+            return;
+        }
         Location base = p.getLocation();
         List<BlockSnapshot> snap = new ArrayList<>();
         for (ClipboardBlock cb : cd.blocks) {
@@ -291,7 +398,10 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
     // ============ UNDO / REDO ============
     private void cmdUndo(Player p) {
         Deque<List<BlockSnapshot>> stack = undoHistory.get(p.getUniqueId());
-        if (stack == null || stack.isEmpty()) { p.sendMessage(msg("nothing-to-undo")); return; }
+        if (stack == null || stack.isEmpty()) {
+            p.sendMessage(msg("nothing-to-undo"));
+            return;
+        }
         List<BlockSnapshot> snap = stack.pop();
         List<BlockSnapshot> redo = new ArrayList<>();
         for (BlockSnapshot s : snap) {
@@ -305,7 +415,10 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
 
     private void cmdRedo(Player p) {
         Deque<List<BlockSnapshot>> stack = redoHistory.get(p.getUniqueId());
-        if (stack == null || stack.isEmpty()) { p.sendMessage(msg("nothing-to-redo")); return; }
+        if (stack == null || stack.isEmpty()) {
+            p.sendMessage(msg("nothing-to-redo"));
+            return;
+        }
         List<BlockSnapshot> snap = stack.pop();
         List<BlockSnapshot> undo = new ArrayList<>();
         for (BlockSnapshot s : snap) {
@@ -319,16 +432,25 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
 
     // ============ COUNT / SIZE ============
     private void cmdCount(Player p, String[] args) {
-        if (args.length < 1) { p.sendMessage(msg("usage", "usage", "//count <блок>")); return; }
+        if (args.length < 1) {
+            p.sendMessage(msg("usage", "usage", "//count <блок>"));
+            return;
+        }
         if (!checkRegion(p)) return;
         Material mat = parseBlock(args[0]);
-        if (mat == null) { p.sendMessage(msg("unknown-block", "block", args[0])); return; }
-
-        Location l1 = pos1.get(p.getUniqueId()), l2 = pos2.get(p.getUniqueId());
+        if (mat == null) {
+            p.sendMessage(msg("unknown-block", "block", args[0]));
+            return;
+        }
+        Location l1 = pos1.get(p.getUniqueId());
+        Location l2 = pos2.get(p.getUniqueId());
         int count = 0;
-        int minX = Math.min(l1.getBlockX(), l2.getBlockX()), maxX = Math.max(l1.getBlockX(), l2.getBlockX());
-        int minY = Math.min(l1.getBlockY(), l2.getBlockY()), maxY = Math.max(l1.getBlockY(), l2.getBlockY());
-        int minZ = Math.min(l1.getBlockZ(), l2.getBlockZ()), maxZ = Math.max(l1.getBlockZ(), l2.getBlockZ());
+        int minX = Math.min(l1.getBlockX(), l2.getBlockX());
+        int maxX = Math.max(l1.getBlockX(), l2.getBlockX());
+        int minY = Math.min(l1.getBlockY(), l2.getBlockY());
+        int maxY = Math.max(l1.getBlockY(), l2.getBlockY());
+        int minZ = Math.min(l1.getBlockZ(), l2.getBlockZ());
+        int maxZ = Math.max(l1.getBlockZ(), l2.getBlockZ());
         for (int x = minX; x <= maxX; x++)
             for (int y = minY; y <= maxY; y++)
                 for (int z = minZ; z <= maxZ; z++)
@@ -338,34 +460,48 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
 
     private void cmdSize(Player p) {
         if (!checkRegion(p)) return;
-        Location l1 = pos1.get(p.getUniqueId()), l2 = pos2.get(p.getUniqueId());
+        Location l1 = pos1.get(p.getUniqueId());
+        Location l2 = pos2.get(p.getUniqueId());
         int sx = Math.abs(l1.getBlockX() - l2.getBlockX()) + 1;
         int sy = Math.abs(l1.getBlockY() - l2.getBlockY()) + 1;
         int sz = Math.abs(l1.getBlockZ() - l2.getBlockZ()) + 1;
-        p.sendMessage(msg("size-result", "x", String.valueOf(sx), "y", String.valueOf(sy), "z", String.valueOf(sz), "total", String.valueOf(sx*sy*sz)));
+        p.sendMessage(msg("size-result",
+            "x", String.valueOf(sx),
+            "y", String.valueOf(sy),
+            "z", String.valueOf(sz),
+            "total", String.valueOf(sx * sy * sz)));
     }
 
     private void sendHelp(Player p) {
-        p.sendMessage(ChatColor.AQUA + "══════ AveliumBuild ══════");
+        p.sendMessage(ChatColor.AQUA + "═══════ AveliumBuild ═══════");
         p.sendMessage(ChatColor.YELLOW + "//wand " + ChatColor.GRAY + "- топор выделения");
-        p.sendMessage(ChatColor.YELLOW + "//pos1, //pos2 " + ChatColor.GRAY + "- точки");
-        p.sendMessage(ChatColor.YELLOW + "//set <блок> " + ChatColor.GRAY + "- заполнить");
-        p.sendMessage(ChatColor.YELLOW + "//replace <старый> <новый>");
-        p.sendMessage(ChatColor.YELLOW + "//walls, //outline <блок>");
-        p.sendMessage(ChatColor.YELLOW + "//sphere <блок> <радиус>");
-        p.sendMessage(ChatColor.YELLOW + "//cyl <блок> <радиус> <высота>");
-        p.sendMessage(ChatColor.YELLOW + "//pyramid <блок> <размер>");
-        p.sendMessage(ChatColor.YELLOW + "//copy, //paste");
-        p.sendMessage(ChatColor.YELLOW + "//undo, //redo");
-        p.sendMessage(ChatColor.YELLOW + "//count <блок>, //size");
+        p.sendMessage(ChatColor.YELLOW + "//pos1, //pos2 " + ChatColor.GRAY + "- установить точки");
+        p.sendMessage(ChatColor.YELLOW + "//set <блок> " + ChatColor.GRAY + "- заполнить регион");
+        p.sendMessage(ChatColor.YELLOW + "//replace <старый> <новый> " + ChatColor.GRAY + "- заменить блоки");
+        p.sendMessage(ChatColor.YELLOW + "//walls <блок> " + ChatColor.GRAY + "- стены");
+        p.sendMessage(ChatColor.YELLOW + "//outline <блок> " + ChatColor.GRAY + "- рамка");
+        p.sendMessage(ChatColor.YELLOW + "//sphere <блок> <радиус> " + ChatColor.GRAY + "- сфера");
+        p.sendMessage(ChatColor.YELLOW + "//cyl <блок> <радиус> <высота> " + ChatColor.GRAY + "- цилиндр");
+        p.sendMessage(ChatColor.YELLOW + "//pyramid <блок> <размер> " + ChatColor.GRAY + "- пирамида");
+        p.sendMessage(ChatColor.YELLOW + "//copy " + ChatColor.GRAY + "- скопировать");
+        p.sendMessage(ChatColor.YELLOW + "//paste " + ChatColor.GRAY + "- вставить");
+        p.sendMessage(ChatColor.YELLOW + "//undo " + ChatColor.GRAY + "- отменить");
+        p.sendMessage(ChatColor.YELLOW + "//redo " + ChatColor.GRAY + "- вернуть");
+        p.sendMessage(ChatColor.YELLOW + "//count <блок> " + ChatColor.GRAY + "- посчитать блоки");
+        p.sendMessage(ChatColor.YELLOW + "//size " + ChatColor.GRAY + "- размер выделения");
+        p.sendMessage(ChatColor.AQUA + "Подсказка: " + ChatColor.WHITE + "Используйте TAB для списка блоков!");
+        p.sendMessage(ChatColor.AQUA + "Блоки можно писать на русском: " + ChatColor.WHITE + "камень, кирпич, кварц...");
     }
 
     // ============ OPERATIONS ============
     private List<Location> getCuboidLocations(Location l1, Location l2) {
         List<Location> locs = new ArrayList<>();
-        int minX = Math.min(l1.getBlockX(), l2.getBlockX()), maxX = Math.max(l1.getBlockX(), l2.getBlockX());
-        int minY = Math.min(l1.getBlockY(), l2.getBlockY()), maxY = Math.max(l1.getBlockY(), l2.getBlockY());
-        int minZ = Math.min(l1.getBlockZ(), l2.getBlockZ()), maxZ = Math.max(l1.getBlockZ(), l2.getBlockZ());
+        int minX = Math.min(l1.getBlockX(), l2.getBlockX());
+        int maxX = Math.max(l1.getBlockX(), l2.getBlockX());
+        int minY = Math.min(l1.getBlockY(), l2.getBlockY());
+        int maxY = Math.max(l1.getBlockY(), l2.getBlockY());
+        int minZ = Math.min(l1.getBlockZ(), l2.getBlockZ());
+        int maxZ = Math.max(l1.getBlockZ(), l2.getBlockZ());
         for (int x = minX; x <= maxX; x++)
             for (int y = minY; y <= maxY; y++)
                 for (int z = minZ; z <= maxZ; z++)
@@ -383,10 +519,13 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
         int total = locs.size();
         List<BlockSnapshot> snap = new ArrayList<>();
 
-        if (total > batch) p.sendMessage(msg("operation-started", "count", String.valueOf(total)));
+        if (total > batch) {
+            p.sendMessage(msg("operation-started", "count", String.valueOf(total)));
+        }
 
         new BukkitRunnable() {
             int index = 0;
+
             @Override
             public void run() {
                 int end = Math.min(index + batch, total);
@@ -408,7 +547,10 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
                 }
                 if (index % progressInterval < batch && total > progressInterval) {
                     int percent = (int) ((index * 100L) / total);
-                    p.sendMessage(msg("operation-progress", "done", String.valueOf(index), "total", String.valueOf(total), "percent", String.valueOf(percent)));
+                    p.sendMessage(msg("operation-progress",
+                        "done", String.valueOf(index),
+                        "total", String.valueOf(total),
+                        "percent", String.valueOf(percent)));
                 }
             }
         }.runTaskTimer(this, 1L, 1L);
@@ -424,34 +566,66 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command cmd, String alias, String[] args) {
         if (args.length == 0) return Collections.emptyList();
-        String name = cmd.getName().toLowerCase();
+
+        String name = cmd.getName().toLowerCase().replace("/", "");
+
         Set<String> blockCmds = Set.of("set", "replace", "walls", "outline", "sphere", "cyl", "pyramid", "count");
         if (!blockCmds.contains(name)) return Collections.emptyList();
 
-        boolean expectBlock = args.length == 1 || (name.equals("replace") && args.length == 2);
+        boolean expectBlock = false;
+        if (name.equals("replace")) {
+            if (args.length == 1 || args.length == 2) expectBlock = true;
+        } else {
+            if (args.length == 1) expectBlock = true;
+        }
         if (!expectBlock) return Collections.emptyList();
 
         String input = args[args.length - 1].toLowerCase();
         List<String> result = new ArrayList<>();
-        for (String key : ruBlocks.keySet()) if (key.startsWith(input)) result.add(key);
+
+        // Сначала русские названия
+        for (String key : ruBlocks.keySet()) {
+            if (key.startsWith(input)) {
+                result.add(key);
+            }
+        }
+
+        // Потом английские названия
         for (Material m : Material.values()) {
             if (m.isBlock()) {
                 String en = m.name().toLowerCase();
-                if (en.startsWith(input)) result.add(en);
+                if (en.startsWith(input)) {
+                    result.add(en);
+                }
             }
         }
-        return result.stream().limit(50).collect(Collectors.toList());
+
+        return result.stream().distinct().limit(50).collect(Collectors.toList());
     }
 
     // ============ HELPER CLASSES ============
     private static class BlockSnapshot {
-        Location location; BlockData data;
-        BlockSnapshot(Location l, BlockData d) { location = l; data = d; }
+        Location location;
+        BlockData data;
+
+        BlockSnapshot(Location l, BlockData d) {
+            location = l;
+            data = d;
+        }
     }
+
     private static class ClipboardBlock {
-        int dx, dy, dz; BlockData data;
-        ClipboardBlock(int x, int y, int z, BlockData d) { dx = x; dy = y; dz = z; data = d; }
+        int dx, dy, dz;
+        BlockData data;
+
+        ClipboardBlock(int x, int y, int z, BlockData d) {
+            dx = x;
+            dy = y;
+            dz = z;
+            data = d;
+        }
     }
+
     private static class ClipboardData {
         Location origin;
         List<ClipboardBlock> blocks = new ArrayList<>();
@@ -506,7 +680,7 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
         add("медь_блок", Material.COPPER_BLOCK);
         add("незерит_блок", Material.NETHERITE_BLOCK);
 
-        // Древесина
+        // Древесина - доски
         add("дуб", Material.OAK_PLANKS);
         add("береза", Material.BIRCH_PLANKS);
         add("ель", Material.SPRUCE_PLANKS);
@@ -603,7 +777,7 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
         add("энд_кирпич", Material.END_STONE_BRICKS);
         add("призматин_кирпич", Material.PRISMARINE_BRICKS);
 
-        // Кварц и природа
+        // Кварц
         add("кварц", Material.QUARTZ_BLOCK);
         add("гладкий_кварц", Material.SMOOTH_QUARTZ);
         add("резной_кварц", Material.CHISELED_QUARTZ_BLOCK);
@@ -618,8 +792,8 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
         add("душевой_песок", Material.SOUL_SAND);
         add("душевая_почва", Material.SOUL_SOIL);
         add("магма", Material.MAGMA_BLOCK);
-        add("глаукус", Material.GLOWSTONE);
         add("светящийся_камень", Material.GLOWSTONE);
+        add("глаукус", Material.GLOWSTONE);
         add("шроомсвет", Material.SHROOMLIGHT);
         add("базальт", Material.BASALT);
         add("гладкий_базальт", Material.SMOOTH_BASALT);
