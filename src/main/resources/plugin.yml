@@ -1,0 +1,64 @@
+name: AveliumBuild
+version: '1.0'
+main: net.avelium.aveliumbuild.AveliumBuild
+api-version: '1.20'
+author: Avelium
+description: WorldEdit для сервера Avelium с русскими подсказками
+
+commands:
+  /wand:
+    description: Получить топор выделения
+    aliases: [wand]
+  /pos1:
+    description: Установить точку 1
+    aliases: [pos1, p1]
+  /pos2:
+    description: Установить точку 2
+    aliases: [pos2, p2]
+  /set:
+    description: Заполнить регион блоком
+    aliases: [set]
+  /replace:
+    description: Заменить блоки
+    aliases: [replace, rep]
+  /walls:
+    description: Построить стены
+    aliases: [walls]
+  /outline:
+    description: Построить полную рамку
+    aliases: [outline]
+  /sphere:
+    description: Построить сферу
+    aliases: [sphere]
+  /cyl:
+    description: Построить цилиндр
+    aliases: [cyl, cylinder]
+  /pyramid:
+    description: Построить пирамиду
+    aliases: [pyramid, pyr]
+  /copy:
+    description: Скопировать регион
+    aliases: [copy]
+  /paste:
+    description: Вставить регион
+    aliases: [paste]
+  /undo:
+    description: Отменить действие
+    aliases: [undo]
+  /redo:
+    description: Вернуть отменённое
+    aliases: [redo]
+  /count:
+    description: Посчитать блоки
+    aliases: [count]
+  /size:
+    description: Размер выделения
+    aliases: [size]
+  /help:
+    description: Помощь по командам
+    aliases: [avhelp]
+
+permissions:
+  aveliumbuild.use:
+    description: Доступ к AveliumBuild
+    default: op
