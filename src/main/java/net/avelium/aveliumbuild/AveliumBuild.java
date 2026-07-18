@@ -646,7 +646,7 @@ public class AveliumBuild extends JavaPlugin implements Listener, TabCompleter {
         // Растения
         add("роза", Material.POPPY);
         add("одуванчик", Material.DANDELION);
-        add("трава_куст", Material.GRASS);
+        add("трава_куст", Material.SHORT_GRASS);
         add("папоротник", Material.FERN);
         add("кактус", Material.CACTUS);
         add("тростник", Material.SUGAR_CANE);
