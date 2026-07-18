@@ -1,0 +1,30 @@
+# ============================================
+#          AveliumBuild Configuration
+# ============================================
+
+settings:
+  # Размер пачки для больших операций (сколько блоков ставить за 1 тик)
+  batch-size: 5000
+  # Показывать прогресс каждые N блоков
+  progress-interval: 50000
+
+messages:
+  prefix: "&8[&b&lBuild&8] "
+  no-permission: "&cУ вас нет прав на использование AveliumBuild!"
+  pos1-set: "&aТочка 1 установлена: &e%x%, %y%, %z%"
+  pos2-set: "&aТочка 2 установлена: &e%x%, %y%, %z%"
+  no-selection: "&cСначала выделите регион! Используйте &e//wand"
+  wand-given: "&aТопор выдан! &7ЛКМ - точка 1, ПКМ - точка 2"
+  unknown-block: "&cНеизвестный блок: &e%block%"
+  operation-started: "&7Обработка &e%count% &7блоков..."
+  operation-done: "&aГотово! Изменено блоков: &e%count%"
+  operation-progress: "&7Прогресс: &e%done%&7/&e%total% &7(&a%percent%%&7)"
+  nothing-to-undo: "&cНечего отменять!"
+  nothing-to-redo: "&cНечего возвращать!"
+  undo-done: "&aОтменено блоков: &e%count%"
+  redo-done: "&aВозвращено блоков: &e%count%"
+  copy-done: "&aСкопировано блоков: &e%count%"
+  paste-done: "&aВставлено блоков: &e%count%"
+  count-result: "&aВ регионе &e%count% &aблоков типа &e%block%"
+  size-result: "&aРазмер выделения: &e%x%x%y%x%z% &7(всего &e%total% &7блоков)"
+  usage: "&cИспользование: &e%usage%"
